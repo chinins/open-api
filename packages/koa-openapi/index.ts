@@ -99,7 +99,7 @@ export function initialize(args: KoaOpenAPIInitializeArgs): OpenAPIFramework {
       }
     },
 
-    visitOperation(operationCtx: OpenAPIFrameworkOperationContext) {
+    visitOperation(operationCtx: any) {
       const apiDoc = operationCtx.apiDoc;
       const methodName = operationCtx.methodName;
       const operationDoc = operationCtx.operationDoc;
@@ -107,6 +107,7 @@ export function initialize(args: KoaOpenAPIInitializeArgs): OpenAPIFramework {
       let middleware = [].concat(operationCtx.additionalFeatures);
 
       if (operationDoc && operationCtx.allowsFeatures) {
+
         if (operationCtx.features.responseValidator) {
           // add response validation middleware
           // it's invalid for a method doc to not have responses, but the post
@@ -158,6 +159,10 @@ export function initialize(args: KoaOpenAPIInitializeArgs): OpenAPIFramework {
             consumesMiddleware,
             operationCtx.consumes
           );
+        }
+
+        if (operationCtx.features.contentTypeCheck) {
+          middleware.push(createContentTypeCheckMiddleware(operationCtx.features.contentTypeCheck))
         }
 
         middleware.unshift(createAssignApiDocMiddleware(apiDoc, operationDoc));
@@ -222,6 +227,14 @@ function createSecurityMiddleware(handler) {
       }
     });
   };
+}
+
+function createContentTypeCheckMiddleware(handler) {
+  return function contentTypeCheckMiddleware(ctx: Context) {
+    const currentContentType = handler();
+    ctx.request.type !== currentContentType && ctx.throw(415, 'Unsupported media type');
+    return;
+  }
 }
 
 function toOpenAPIRequest(ctx) {
