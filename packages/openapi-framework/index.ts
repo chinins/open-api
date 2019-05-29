@@ -10,6 +10,7 @@ import { Logger } from 'ts-log';
 import BasePath from './src/BasePath';
 import {
   ConsoleDebugAdapterLogger,
+  IContentTypesByStatusCode,
   IOpenAPIFramework,
   OpenAPIFrameworkAPIContext,
   OpenAPIFrameworkArgs,
@@ -22,6 +23,7 @@ import {
 import {
   addOperationTagToApiDoc,
   allowsCoercionFeature,
+  allowsAcceptHeaderValidationFeature,
   allowsDefaultsFeature,
   allowsFeatures,
   allowsResponseValidationFeature,
@@ -416,6 +418,38 @@ export default class OpenAPIFramework implements IOpenAPIFramework {
 
           if (operationContext.allowsFeatures) {
             // add features
+            if (operationDoc.responses &&
+              allowsAcceptHeaderValidationFeature(
+                this,
+                this.apiDoc,
+                pathModule,
+                pathDoc,
+                operationDoc
+            )) {
+              // acceptHeaderValidation feature
+              const acceptHeaderValidation = (acceptsFunction) => {
+                const contentTypesByStatusCode = Object.entries(operationDoc.responses)
+                  .reduce(
+                    (acc, [statusCode, responseProperties]) => ({
+                      ...acc,
+                      [statusCode]:
+                        (responseProperties as any).content !== undefined
+                          ? acceptsFunction(Object.keys((responseProperties as any).content))
+                          : []
+                    }),
+                    {}
+                  );
+
+                return Object.values(contentTypesByStatusCode).some(
+                  contentType => contentType === false
+                )
+                  ? false
+                  : contentTypesByStatusCode;
+              }
+
+              operationContext.features.acceptHeaderValidation = acceptHeaderValidation;
+            }
+
             if (
               operationDoc.responses &&
               allowsResponseValidationFeature(

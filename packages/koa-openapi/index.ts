@@ -20,11 +20,11 @@ export interface KoaRouter {
 
 export interface KoaOpenAPIInitializeArgs extends OpenAPIFrameworkArgs {
   consumesMiddleware?: { [mimeType: string]: Middleware };
-  docsPath: string;
-  errorMiddleware: Middleware;
-  exposeApiDocs: boolean;
+  docsPath?: string;
+  errorMiddleware?: Middleware;
+  exposeApiDocs?: boolean;
   router: KoaRouter;
-  securityFilter: Middleware;
+  securityFilter?: Middleware;
 }
 
 export function initialize(args: KoaOpenAPIInitializeArgs): OpenAPIFramework {
@@ -107,6 +107,7 @@ export function initialize(args: KoaOpenAPIInitializeArgs): OpenAPIFramework {
       let middleware = [].concat(operationCtx.additionalFeatures);
 
       if (operationDoc && operationCtx.allowsFeatures) {
+
         if (operationCtx.features.responseValidator) {
           // add response validation middleware
           // it's invalid for a method doc to not have responses, but the post
@@ -158,6 +159,10 @@ export function initialize(args: KoaOpenAPIInitializeArgs): OpenAPIFramework {
             consumesMiddleware,
             operationCtx.consumes
           );
+        }
+
+        if (operationCtx.features.acceptHeaderValidation) {
+          middleware.unshift(createAcceptHeaderValidationMiddleware(operationCtx.features.acceptHeaderValidation))
         }
 
         middleware.unshift(createAssignApiDocMiddleware(apiDoc, operationDoc));
@@ -222,6 +227,17 @@ function createSecurityMiddleware(handler) {
       }
     });
   };
+}
+
+function createAcceptHeaderValidationMiddleware(handler) {
+  return function acceptHeaderValidationMiddleware(ctx: Context) {
+    const responsesContentTypes = handler(ctx.accepts.bind(ctx));
+
+    if (responsesContentTypes === false) {
+      ctx.throw(406, 'Not Acceptable type')
+    }
+    ctx.state.responsesContentTypes = responsesContentTypes;
+  }
 }
 
 function toOpenAPIRequest(ctx) {

@@ -110,6 +110,10 @@ export interface OpenAPIFrameworkPathContext {
   getPathDoc(): any;
 }
 
+export interface IContentTypesByStatusCode {
+  [statusCode: string]: string;
+}
+
 export interface OpenAPIFrameworkOperationContext {
   additionalFeatures: any[];
   allowsFeatures: boolean;
@@ -122,6 +126,7 @@ export interface OpenAPIFrameworkOperationContext {
     requestValidator?: IOpenAPIRequestValidator;
     responseValidator?: IOpenAPIResponseValidator;
     securityHandler?: IOpenAPISecurityHandler;
+    acceptHeaderValidation?: (acceptsFunction: any) => (false | IContentTypesByStatusCode);
   };
   methodName: string;
   methodParameters: any[];
