@@ -23,7 +23,7 @@ import {
 import {
   addOperationTagToApiDoc,
   allowsCoercionFeature,
-  allowsAcceptHeaderValidationFeature,
+  allowsAcceptHeaderValidatorFeature,
   allowsDefaultsFeature,
   allowsFeatures,
   allowsResponseValidationFeature,
@@ -419,15 +419,15 @@ export default class OpenAPIFramework implements IOpenAPIFramework {
           if (operationContext.allowsFeatures) {
             // add features
             if (operationDoc.responses &&
-              allowsAcceptHeaderValidationFeature(
+              allowsAcceptHeaderValidatorFeature(
                 this,
                 this.apiDoc,
                 pathModule,
                 pathDoc,
                 operationDoc
             )) {
-              // acceptHeaderValidation feature
-              const acceptHeaderValidation = (acceptsFunction) => {
+              // acceptHeaderValidator feature
+              const acceptHeaderValidator = (acceptsFunction) => {
                 const contentTypesByStatusCode = Object.entries(operationDoc.responses)
                   .reduce(
                     (acc, [statusCode, responseProperties]) => ({
@@ -447,7 +447,7 @@ export default class OpenAPIFramework implements IOpenAPIFramework {
                   : contentTypesByStatusCode;
               }
 
-              operationContext.features.acceptHeaderValidation = acceptHeaderValidation;
+              operationContext.features.acceptHeaderValidator = acceptHeaderValidator;
             }
 
             if (

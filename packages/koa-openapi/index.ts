@@ -107,7 +107,6 @@ export function initialize(args: KoaOpenAPIInitializeArgs): OpenAPIFramework {
       let middleware = [].concat(operationCtx.additionalFeatures);
 
       if (operationDoc && operationCtx.allowsFeatures) {
-
         if (operationCtx.features.responseValidator) {
           // add response validation middleware
           // it's invalid for a method doc to not have responses, but the post
@@ -161,8 +160,8 @@ export function initialize(args: KoaOpenAPIInitializeArgs): OpenAPIFramework {
           );
         }
 
-        if (operationCtx.features.acceptHeaderValidation) {
-          middleware.unshift(createAcceptHeaderValidationMiddleware(operationCtx.features.acceptHeaderValidation))
+        if (operationCtx.features.acceptHeaderValidator) {
+          middleware.unshift(createAcceptHeaderValidatorMiddleware(operationCtx.features.acceptHeaderValidator))
         }
 
         middleware.unshift(createAssignApiDocMiddleware(apiDoc, operationDoc));
@@ -229,14 +228,14 @@ function createSecurityMiddleware(handler) {
   };
 }
 
-function createAcceptHeaderValidationMiddleware(handler) {
-  return function acceptHeaderValidationMiddleware(ctx: Context) {
-    const responsesContentTypes = handler(ctx.accepts.bind(ctx));
+function createAcceptHeaderValidatorMiddleware(handler) {
+  return function acceptHeaderValidatorMiddleware(ctx: Context) {
+    const responseContentTypes = handler(ctx.accepts.bind(ctx));
 
-    if (responsesContentTypes === false) {
+    if (responseContentTypes === false) {
       ctx.throw(406, 'Not Acceptable type')
     }
-    ctx.state.responsesContentTypes = responsesContentTypes;
+    ctx.state.responseContentTypes = responseContentTypes;
   }
 }
 
